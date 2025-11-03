@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Learning Interactive - 近未来数学学習システム</title>
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📈</text></svg>'>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .home-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .main-title {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            to { text-shadow: 0 0 40px rgba(245, 87, 108, 0.8), 0 0 60px rgba(118, 75, 162, 0.6); }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 50px;
+            opacity: 0.8;
+            animation: fadeInUp 2s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 0.8; transform: translateY(0); }
+        }
+
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin-top: 60px;
+        }
+
+        .unit-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            padding: 40px;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .unit-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: all 0.5s;
+            transform: rotate(45deg) translate(-100%, -100%);
+        }
+
+        .unit-card:hover::before {
+            transform: rotate(45deg) translate(100%, 100%);
+        }
+
+        .unit-card:hover {
+            transform: translateY(-15px) scale(1.05);
+            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .unit-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .unit-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .unit-description {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .unit-features {
+            list-style: none;
+            text-align: left;
+        }
+
+        .unit-features li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            opacity: 0.9;
+        }
+
+        .unit-features li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .page {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .page.active {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateX(50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .back-button {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .back-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .unit-page {
+            padding: 100px 20px 50px;
+        }
+
+        .unit-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .unit-header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .unit-header p {
+            font-size: 1.3rem;
+            opacity: 0.8;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .input-group h3 {
+            color: #ffffff;
+            margin-bottom: 15px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            font-weight: bold;
+            min-width: 80px;
+            color: #ffffff;
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            font-size: 1em;
+            width: 100px;
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .wide-input {
+            width: 200px;
+        }
+
+        .fraction-hint {
+            font-size: 0.85em;
+            color: #aaa;
+            margin-left: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .main-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 600px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .calculation-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .calculation-panel::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .calculation-panel::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+
+        .calculation-panel::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 5px;
+        }
+
+        .graph-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: sticky;
+            top: 20px;
+        }
+
+        .live-function-display {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 12px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+            word-wrap: break-word;
+        }
+
+        .result-area {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .step {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .step-title {
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .substep {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-left: 3px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .substep strong {
+            color: #667eea;
+        }
+
+        .completed-form {
+            background: rgba(33, 150, 243, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #2196f3;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .highlight-formula {
+            font-size: 1.4em !important;
+            color: #64b5f6;
+            font-weight: bold;
+        }
+
+        .vertex-info {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .vertex-info div {
+            margin: 5px 0;
+            font-size: 1.05em;
+            color: #ffffff;
+        }
+
+        .math-formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2em;
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffffff;
+        }
+
+        .highlight {
+            background: rgba(255, 193, 7, 0.3);
+            padding: 5px;
+            border-radius: 3px;
+            color: #ffc107;
+        }
+
+        .error {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #f44336;
+        }
+
+        .graph-direct-control {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            border: 2px solid #667eea;
+        }
+
+        .graph-direct-control label {
+            display: block;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .zoom-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.zoom-button {
+    background: linear-gradient(135deg, #4ecdc4, #44a3d5);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.zoom-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(68, 163, 213, 0.4);
+}
+
+.zoom-info {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: #aaa;
+}
+
+        .horizontal-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .horizontal-slider {
+            flex: 1;
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(to right, #ff6b6b 0%, #667eea 50%, #4ecdc4 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .horizontal-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border: 3px solid white;
+            transition: all 0.2s ease;
+        }
+
+        .horizontal-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+
+        .horizontal-slider::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.2);
+        }
+
+        .slider-label {
+            font-size: 0.9em;
+            color: #ccc;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .slider-value-display {
+            text-align: center;
+            margin-top: 8px;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1em;
+        }
+
+        .slider-value-display span {
+            color: #ff6b6b;
+            font-size: 1.1em;
+        }
+
+        canvas {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.95);
+        }
+
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            
+            .unit-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .main-content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .graph-panel {
+                position: relative;
+                top: 0;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(102, 126, 234, 0.3);
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle-container" id="particles"></div>
+
+    <div class="container">
+        <div id="home" class="page active">
+            <div class="home-screen">
+                <h1 class="main-title">MATH UNIVERSE</h1>
+                <p class="subtitle">近未来数学学習システム - 数学を視覚的に体験する</p>
+
+                <div class="unit-grid">
+                    <div class="unit-card" onclick="showUnit('quadratic')">
+                        <span class="unit-icon">📈</span>
+                        <h3 class="unit-title">2次関数</h3>
+                        <p class="unit-description">放物線の美しさを探求し、平方完成から最大・最小値まで完全マスター</p>
+                        <ul class="unit-features">
+                            <li>インタラクティブなグラフ操作</li>
+                            <li>平方完成の詳細な途中式</li>
+                            <li>場合分けの視覚的理解</li>
+                            <li>分数表示対応</li>
+                        </ul>
+                    </div>
+
+                    <div class="unit-card" onclick="alert('開発中です')">
+                        <span class="unit-icon">🌊</span>
+                        <h3 class="unit-title">三角関数</h3>
+                        <p class="unit-description">波の世界へようこそ。sin, cos, tanの周期的な美しさを体感</p>
+                        <ul class="unit-features">
+                            <li>動的な波形グラフ</li>
+                            <li>周期・振幅の調整機能</li>
+                            <li>単位円との関連</li>
+                            <li>実生活への応用例</li>
+                        </ul>
+                    </div>
+
+                    <div class="unit-card" onclick="alert('開発中です')">
+                        <span class="unit-icon">🔢</span>
+                        <h3 class="unit-title">微分・積分</h3>
+                        <p class="unit-description">変化の科学を探る。微分で瞬間の変化率、積分で面積を求める</p>
+                        <ul class="unit-features">
+                            <li>視覚的な導関数グラフ</li>
+                            <li>面積の動的計算</li>
+                            <li>接線の動的表示</li>
+                            <li>定積分の幾何学的意味</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="back-button" id="backButton" onclick="showHome()" style="display: none;">← ホーム</button>
+
+        <div id="quadratic-page" class="page">
+            <div class="unit-page">
+                <div class="unit-header">
+                    <h1>📈 2次関数マスター</h1>
+                    <p>放物線の世界で数学の美しさを発見しよう</p>
+                </div>
+                
+                <div class="input-group">
+                    <h3>2次関数の係数を入力してください</h3>
+                    <div class="input-row">
+                        <label>f(x) = </label>
+                        <input type="text" id="coeff-a" value="1" placeholder="例: 1, 1/2, -2">
+                        <span>x² + </span>
+                        <input type="text" id="coeff-b" value="0" placeholder="例: 0, 3/4">
+                        <span>x + </span>
+                        <input type="text" id="coeff-c" value="0" placeholder="例: 0, -5/2">
+                        <button onclick="analyzeQuadratic()">解析開始</button>
+                        <span class="fraction-hint">※分数は「3/4」、小数は「0.75」で入力可</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <h3>📍 定数aを求める（通る点から決定）</h3>
+                    <div class="input-row">
+                        <label>頂点形式:</label>
+                        <span>y = a(x - </span>
+                        <input type="text" id="vertex-p" value="0" placeholder="p" style="width: 60px;">
+                        <span>)² + </span>
+                        <input type="text" id="vertex-q" value="0" placeholder="q" style="width: 60px;">
+                    </div>
+                    <div class="input-row">
+                        <label>通る点1:</label>
+                        <span>(</span>
+                        <input type="text" id="point1-x" placeholder="x" style="width: 60px;">
+                        <span>,</span>
+                        <input type="text" id="point1-y" placeholder="y" style="width: 60px;">
+                        <span>)</span>
+                        <button onclick="findConstantA()">定数aを求める</button>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <strong>または、3点から2次関数を決定:</strong>
+                        <div class="input-row" style="margin-top: 10px;">
+                            <span>点1: (</span>
+                            <input type="text" id="three-point1-x" placeholder="x₁" style="width: 60px;">
+                            <span>,</span>
+                            <input type="text" id="three-point1-y" placeholder="y₁" style="width: 60px;">
+                            <span>)</span>
+                            <span>点2: (</span>
+                            <input type="text" id="three-point2-x" placeholder="x₂" style="width: 60px;">
+                            <span>,</span>
+                            <input type="text" id="three-point2-y" placeholder="y₂" style="width: 60px;">
+                            <span>)</span>
+                            <span>点3: (</span>
+                            <input type="text" id="three-point3-x" placeholder="x₃" style="width: 60px;">
+                            <span>,</span>
+                            <input type="text" id="three-point3-y" placeholder="y₃" style="width: 60px;">
+                            <span>)</span>
+                            <button onclick="findFromThreePoints()">決定</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <h3>定義域を設定（最大・最小値を求める場合）</h3>
+                    <div class="input-row">
+                        <input type="text" id="domain-min" value="-3" class="wide-input" placeholder="最小値（例: -3）">
+                        <span>≤ x ≤</span>
+                        <input type="text" id="domain-max" value="3" class="wide-input" placeholder="最大値（例: 5）">
+                        <button onclick="findMinMax()">最大・最小値を求める</button>
+                    </div>
+                </div>
+
+                <div class="main-content-grid">
+                    <div class="calculation-panel">
+                        <div id="live-function" class="live-function-display">
+                            f(x) = x²
+                        </div>
+                        <div id="quadratic-result" class="result-area" style="display: none;"></div>
+                    </div>
+                    <div class="graph-panel">
+                        <div class="graph-container">
+                            <canvas id="quadratic-canvas" width="550" height="450"></canvas>
+                        </div>
+                        <div class="graph-direct-control">
+                            <label>📍 グラフを左右に移動:</label>
+                            <div class="horizontal-slider-container">
+                                <span class="slider-label">← 左</span>
+                                <input type="range" id="vertex-x-slider" min="-5" max="5" step="0.1" value="0" class="horizontal-slider">
+                                <span class="slider-label">右 →</span>
+                            </div>
+                            <div class="slider-value-display">
+                                頂点のx座標: <span id="vertex-x-value">0</span>
+                            </div>
+                            <div class="zoom-controls">
+    <button class="zoom-button" onclick="zoomIn()">🔍 拡大</button>
+    <button class="zoom-button" onclick="zoomOut()">🔍 縮小</button>
+    <button class="zoom-button" onclick="resetZoom()">↺ リセット</button>
+</div>
+<div class="zoom-info">
+    表示範囲: x = <span id="zoom-x-range">-5 ~ 5</span>, y = <span id="zoom-y-range">-10 ~ 10</span>
+</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = (Math.random() * 4 + 1) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        function showUnit(unit) {
+            showLoading();
+            
+            setTimeout(() => {
+                document.getElementById('home').classList.remove('active');
+                document.getElementById(unit + '-page').classList.add('active');
+                document.getElementById('backButton').style.display = 'block';
+                hideLoading();
+                
+                if (unit === 'quadratic') {
+                    initQuadratic();
+                }
+            }, 500);
+        }
+
+        function showHome() {
+            showLoading();
+            
+            setTimeout(() => {
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                document.getElementById('home').classList.add('active');
+                document.getElementById('backButton').style.display = 'none';
+                hideLoading();
+            }, 300);
+        }
+
+        function showLoading() {
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.innerHTML = '<div class="loading-spinner"></div>';
+            loading.id = 'loading';
+            document.body.appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        let currentVertexX = 0;
+let currentVertexY = 0; 
+let currentShapeA = 1;
+let zoomLevel = 1;
+let graphXMin = -5, graphXMax = 5, graphYMin = -10, graphYMax = 10;
+
+        function parseFraction(str) {
+            str = str.trim();
+            if (str === '') return 0;
+            
+            if (str.includes('/')) {
+                const parts = str.split('/');
+                if (parts.length === 2) {
+                    const num = parseFloat(parts[0]);
+                    const den = parseFloat(parts[1]);
+                    if (!isNaN(num) && !isNaN(den) && den !== 0) {
+                        return num / den;
+                    }
+                }
+                return NaN;
+            }
+            
+            return parseFloat(str);
+        }
+
+        function toFractionString(num, maxDenom = 100) {
+            if (num === 0) return '0';
+            if (Math.abs(num) > 1000) return num.toFixed(2);
+            
+            const sign = num < 0 ? '-' : '';
+            num = Math.abs(num);
+            
+            if (Math.abs(num - Math.round(num)) < 0.0001) {
+                return sign + Math.round(num);
+            }
+            
+            let bestNum = Math.round(num);
+            let bestDen = 1;
+            let bestError = Math.abs(num - bestNum);
+            
+            for (let den = 2; den <= maxDenom; den++) {
+                const numCandidate = Math.round(num * den);
+                const error = Math.abs(num - numCandidate / den);
+                if (error < bestError) {
+                    bestNum = numCandidate;
+                    bestDen = den;
+                    bestError = error;
+                }
+                if (error < 0.0001) break;
+            }
+            
+            if (bestError < 0.01) {
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                const g = gcd(bestNum, bestDen);
+                bestNum /= g;
+                bestDen /= g;
+                
+                if (bestDen === 1) {
+                    return sign + bestNum;
+                }
+                return sign + bestNum + '/' + bestDen;
+            }
+            
+            return sign + num.toFixed(2);
+        }
+
+        function formatNumber(num) {
+            return toFractionString(num);
+        }
+
+        function updateLiveFunctionDisplay(a, b, c) {
+            const formatCoeff = (coeff, isFirst = false) => {
+                if (coeff === 0) return '';
+                const coeffStr = toFractionString(Math.abs(coeff));
+                if (Math.abs(coeff) === 1) {
+                    if (isFirst) return coeff < 0 ? '-' : '';
+                    return coeff > 0 ? '+' : '-';
+                }
+                if (isFirst) {
+                    return coeff < 0 ? '-' + coeffStr : coeffStr;
+                }
+                return coeff > 0 ? '+' + coeffStr : '-' + coeffStr;
+            };
+            
+            let functionDisplay = '';
+            
+            if (a === 0) {
+                if (b === 0) {
+                    functionDisplay = toFractionString(c);
+                } else {
+                    const bStr = Math.abs(b) === 1 ? (b < 0 ? '-' : '') : toFractionString(b);
+                    functionDisplay = `${bStr}x`;
+                    if (c !== 0) {
+                        functionDisplay += (c > 0 ? '+' : '') + toFractionString(c);
+                    }
+                }
+            } else {
+                const aStr = formatCoeff(a, true);
+                functionDisplay = `${aStr}x²`;
+                
+                if (b !== 0) {
+                    const bStr = formatCoeff(b);
+                    functionDisplay += `${bStr}x`;
+                }
+                if (c !== 0) {
+                    const cStr = formatCoeff(c);
+                    functionDisplay += `${cStr}`;
+                }
+            }
+            
+            const liveFunc = document.getElementById('live-function');
+            if (liveFunc) {
+                liveFunc.innerHTML = `f(x) = ${functionDisplay}`;
+            }
+        }
+
+        function moveGraphHorizontally() {
+            const slider = document.getElementById('vertex-x-slider');
+            const valueSpan = document.getElementById('vertex-x-value');
+            
+            if (!slider || !valueSpan) return;
+            
+            currentVertexX = parseFloat(slider.value);
+            valueSpan.textContent = formatNumber(currentVertexX);
+            
+            updateCoefficientsFromVertex();
+            const a = currentShapeA;
+            const b = calculateB();
+            const c = calculateC();
+            
+            drawQuadraticGraph(a, b, c);
+            updateLiveFunctionDisplay(a, b, c);
+        }
+
+        function calculateB() {
+            return -2 * currentShapeA * currentVertexX;
+        }
+
+        function calculateC() {
+            return currentVertexY + currentShapeA * currentVertexX * currentVertexX;
+        }
+
+        function updateCoefficientsFromVertex() {
+            const a = currentShapeA;
+            const b = calculateB();
+            const c = calculateC();
+            
+            const aField = document.getElementById('coeff-a');
+            const bField = document.getElementById('coeff-b');
+            const cField = document.getElementById('coeff-c');
+            
+            if (aField) aField.value = formatNumber(a);
+            if (bField) bField.value = formatNumber(b);
+            if (cField) cField.value = formatNumber(c);
+        }
+
+        function resetGraph() {
+            currentVertexX = 0;
+            currentVertexY = 0;
+            currentShapeA = 1;
+            
+            const xSlider = document.getElementById('vertex-x-slider');
+            if (xSlider) xSlider.value = 0;
+            
+            const xValue = document.getElementById('vertex-x-value');
+            if (xValue) xValue.textContent = '0';
+            
+            const aField = document.getElementById('coeff-a');
+            const bField = document.getElementById('coeff-b');
+            const cField = document.getElementById('coeff-c');
+            
+            if (aField) aField.value = 1;
+            if (bField) bField.value = 0;
+            if (cField) cField.value = 0;
+            
+            drawQuadraticGraph(1, 0, 0);
+            updateLiveFunctionDisplay(1, 0, 0);
+        }
+
+        let minMaxPoints = null; // 最大値・最小値の座標を保存
+
+        function zoomIn() {
+    zoomLevel *= 0.7;
+    updateZoomRange();
+    syncFromCoefficients();
+}
+
+function zoomOut() {
+    zoomLevel *= 1.4;
+    updateZoomRange();
+    syncFromCoefficients();
+}
+
+function resetZoom() {
+    zoomLevel = 1;
+    updateZoomRange();
+    syncFromCoefficients();
+}
+
+function zoomIn() {
+    zoomLevel *= 0.7;
+    updateZoomRange();
+    const a = parseFraction(document.getElementById('coeff-a').value) || 1;
+    const b = parseFraction(document.getElementById('coeff-b').value) || 0;
+    const c = parseFraction(document.getElementById('coeff-c').value) || 0;
+    drawQuadraticGraph(a, b, c);
+}
+
+function zoomOut() {
+    zoomLevel *= 1.4;
+    updateZoomRange();
+    const a = parseFraction(document.getElementById('coeff-a').value) || 1;
+    const b = parseFraction(document.getElementById('coeff-b').value) || 0;
+    const c = parseFraction(document.getElementById('coeff-c').value) || 0;
+    drawQuadraticGraph(a, b, c);
+}
+
+function resetZoom() {
+    zoomLevel = 1;
+    updateZoomRange();
+    const a = parseFraction(document.getElementById('coeff-a').value) || 1;
+    const b = parseFraction(document.getElementById('coeff-b').value) || 0;
+    const c = parseFraction(document.getElementById('coeff-c').value) || 0;
+    drawQuadraticGraph(a, b, c);
+}
+
+function updateZoomRange() {
+    const baseXRange = 5;
+    const baseYRange = 10;
+    
+    const xRange = baseXRange * zoomLevel;
+    const yRange = baseYRange * zoomLevel;
+    
+    graphXMin = -xRange;
+    graphXMax = xRange;
+    graphYMin = -yRange;
+    graphYMax = yRange;
+    
+    const zoomXRange = document.getElementById('zoom-x-range');
+    const zoomYRange = document.getElementById('zoom-y-range');
+    
+    if (zoomXRange) {
+        zoomXRange.textContent = 
+            `${toFractionString(graphXMin)} ~ ${toFractionString(graphXMax)}`;
+    }
+    if (zoomYRange) {
+        zoomYRange.textContent = 
+            `${toFractionString(graphYMin)} ~ ${toFractionString(graphYMax)}`;
+    }
+}
+
+        function analyzeQuadratic() {
+            const a = parseFraction(document.getElementById('coeff-a').value);
+            const b = parseFraction(document.getElementById('coeff-b').value);
+            const c = parseFraction(document.getElementById('coeff-c').value);
+            
+            const resultDiv = document.getElementById('quadratic-result');
+            
+            if (isNaN(a) || isNaN(b) || isNaN(c)) {
+                resultDiv.innerHTML = '<div class="error">正しい数値または分数を入力してください（例: 1/2, 0.5）</div>';
+                resultDiv.style.display = 'block';
+                return;
+            }
+            
+            if (a === 0) {
+                let html = `
+                    <div class="step">
+                        <div class="step-title">📝 1次関数の解析</div>
+                        <div class="math-formula">f(x) = ${toFractionString(b)}x ${c >= 0 ? '+' : ''}${toFractionString(c)}</div>
+                    </div>
+                `;
+                
+                if (b === 0) {
+                    html += `
+                        <div class="step">
+                            <div class="step-title">📊 定数関数</div>
+                            <div>この関数は定数関数で、すべてのxに対してy = ${toFractionString(c)}です。</div>
+                            <div>グラフは水平線になります。</div>
+                        </div>
+                    `;
+                } else {
+                    const slope = b;
+                    const yIntercept = c;
+                    const xIntercept = -c / b;
+                    
+                    html += `
+                        <div class="step">
+                            <div class="step-title">📊 1次関数の性質</div>
+                            <div class="vertex-info">
+                                <div><strong>傾き:</strong> ${toFractionString(slope)}</div>
+                                <div><strong>y切片:</strong> ${toFractionString(yIntercept)}</div>
+                                <div><strong>x切片:</strong> ${toFractionString(xIntercept)}</div>
+                                <div><strong>グラフの向き:</strong> ${slope > 0 ? '右上がり' : '右下がり'}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                resultDiv.innerHTML = html;
+                resultDiv.style.display = 'block';
+                drawQuadraticGraph(a, b, c);
+                return;
+            }
+            
+            const absCoeff = Math.abs(a);
+            const aStr = Math.abs(a) === 1 ? (a < 0 ? '-' : '') : toFractionString(a);
+            
+            let html = `
+                <div class="step">
+                    <div class="step-title">📝 元の関数</div>
+                    <div class="math-formula">f(x) = ${aStr}x²`;
+            
+            if (b !== 0) {
+                html += ` ${b > 0 ? '+' : ''}${Math.abs(b) === 1 ? (b < 0 ? '-' : '') : toFractionString(b)}x`;
+            }
+            if (c !== 0) {
+                html += ` ${c > 0 ? '+' : ''}${toFractionString(c)}`;
+            }
+            
+            html += `</div></div>`;
+            
+            const vertexX = -b / (2 * a);
+            const vertexY = a * vertexX * vertexX + b * vertexX + c;
+            const discriminant = b * b - 4 * a * c;
+            
+            html += `
+                <div class="step">
+                    <div class="step-title">📚 平方完成の途中式</div>
+                    <div class="substep">
+                        <strong>手順1:</strong> x²の係数でくくりだす
+                        <div class="math-formula">f(x) = ${toFractionString(a)}(x² ${b/a >= 0 ? '+' : ''}${toFractionString(b/a)}x) ${c >= 0 ? '+' : ''}${toFractionString(c)}</div>
+                    </div>
+                    <div class="substep">
+                        <strong>手順2:</strong> (x + p)² の形を作る
+                        <div>x² ${b/a >= 0 ? '+' : ''}${toFractionString(b/a)}x を完全平方にするには:</div>
+                        <div class="math-formula">(${toFractionString(b/(2*a))})² = ${toFractionString((b/(2*a))**2)} を加減する</div>
+                    </div>
+                    <div class="substep">
+                        <strong>手順3:</strong> 完全平方を作成
+                        <div class="math-formula">x² ${b/a >= 0 ? '+' : ''}${toFractionString(b/a)}x = (x ${b/(2*a) >= 0 ? '+' : ''}${toFractionString(b/(2*a))})² - ${toFractionString((b/(2*a))**2)}</div>
+                    </div>
+                    <div class="substep">
+                        <strong>手順4:</strong> 全体をまとめる
+                        <div class="math-formula">f(x) = ${toFractionString(a)}(x ${vertexX >= 0 ? '-' : '+'}${toFractionString(Math.abs(vertexX))})² ${vertexY >= 0 ? '+' : ''}${toFractionString(vertexY)}</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-title">✨ 平方完成の結果</div>
+                    <div class="completed-form">
+                        <div class="math-formula highlight-formula">f(x) = ${toFractionString(a)}(x ${vertexX >= 0 ? '-' : '+'}${toFractionString(Math.abs(vertexX))})² ${vertexY >= 0 ? '+' : ''}${toFractionString(vertexY)}</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-title">📍 頂点と基本情報</div>
+                    <div class="vertex-info">
+                        <div><strong>頂点:</strong> (${toFractionString(vertexX)}, ${toFractionString(vertexY)})</div>
+                        <div><strong>軸の方程式:</strong> x = ${toFractionString(vertexX)}</div>
+                        <div><strong>グラフの向き:</strong> ${a > 0 ? '下に凸（上向き）' : '上に凸（下向き）'}</div>
+                        <div><strong>y切片:</strong> (0, ${toFractionString(c)})</div>
+                        ${a > 0 ? `<div><strong>最小値:</strong> ${toFractionString(vertexY)} (x = ${toFractionString(vertexX)} のとき)</div>` : 
+                                  `<div><strong>最大値:</strong> ${toFractionString(vertexY)} (x = ${toFractionString(vertexX)} のとき)</div>`}
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-title">🔍 判別式と解</div>
+                    <div>判別式 D = b² - 4ac = (${toFractionString(b)})² - 4 × ${toFractionString(a)} × ${toFractionString(c)} = ${toFractionString(discriminant)}</div>
+            `;
+            
+            if (discriminant > 0) {
+                const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+                const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+                html += `
+                    <div>D > 0 なので、<span class="highlight">異なる2つの実解</span>があります</div>
+                    <div><strong>解:</strong> x = ${toFractionString(Math.max(x1, x2))}, ${toFractionString(Math.min(x1, x2))}</div>
+                    <div><strong>x切片:</strong> (${toFractionString(Math.max(x1, x2))}, 0), (${toFractionString(Math.min(x1, x2))}, 0)</div>
+                `;
+            } else if (Math.abs(discriminant) < 0.0001) {
+                html += `
+                    <div>D = 0 なので、<span class="highlight">重解</span>があります</div>
+                    <div><strong>解:</strong> x = ${toFractionString(vertexX)}</div>
+                    <div><strong>x切片:</strong> (${toFractionString(vertexX)}, 0)</div>
+                `;
+            } else {
+                html += `
+                    <div>D < 0 なので、<span class="highlight">実解なし</span></div>
+                    <div>グラフはx軸と交わりません</div>
+                `;
+            }
+            html += `</div>`;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            
+            drawQuadraticGraph(a, b, c);
+        }
+
+        function findConstantA() {
+            const p = parseFraction(document.getElementById('vertex-p').value);
+            const q = parseFraction(document.getElementById('vertex-q').value);
+            const x1 = parseFraction(document.getElementById('point1-x').value);
+            const y1 = parseFraction(document.getElementById('point1-y').value);
+            
+            if (isNaN(p) || isNaN(q) || isNaN(x1) || isNaN(y1)) {
+                alert('すべての値を正しく入力してください');
+                return;
+            }
+            
+            if (x1 === p) {
+                alert('通る点のx座標が頂点のx座標と同じです。別の点を選んでください。');
+                return;
+            }
+            
+            const a = (y1 - q) / ((x1 - p) ** 2);
+            const b = -2 * a * p;
+            const c = a * p * p + q;
+            
+            document.getElementById('coeff-a').value = toFractionString(a);
+            document.getElementById('coeff-b').value = toFractionString(b);
+            document.getElementById('coeff-c').value = toFractionString(c);
+            
+            const resultDiv = document.getElementById('quadratic-result');
+            let html = `
+                <div class="step">
+                    <div class="step-title">🎯 定数aの求め方</div>
+                    <div class="substep">
+                        <strong>与えられた情報:</strong>
+                        <div>頂点形式: y = a(x - ${toFractionString(p)})² + ${toFractionString(q)}</div>
+                        <div>通る点: (${toFractionString(x1)}, ${toFractionString(y1)})</div>
+                    </div>
+                    <div class="substep">
+                        <strong>点を代入:</strong>
+                        <div class="math-formula">${toFractionString(y1)} = a(${toFractionString(x1)} - ${toFractionString(p)})² + ${toFractionString(q)}</div>
+                        <div class="math-formula">${toFractionString(y1)} = a × ${toFractionString((x1 - p) ** 2)} + ${toFractionString(q)}</div>
+                        <div class="math-formula">${toFractionString(y1 - q)} = a × ${toFractionString((x1 - p) ** 2)}</div>
+                    </div>
+                    <div class="substep">
+                        <strong>aを求める:</strong>
+                        <div class="math-formula">a = ${toFractionString(y1 - q)} ÷ ${toFractionString((x1 - p) ** 2)}</div>
+                        <div class="completed-form">
+                            <div class="math-formula highlight-formula">a = ${toFractionString(a)}</div>
+                        </div>
+                    </div>
+                    <div class="substep">
+                        <strong>標準形に変換:</strong>
+                        <div>y = ${toFractionString(a)}(x - ${toFractionString(p)})² + ${toFractionString(q)}</div>
+                        <div class="completed-form">
+                            <div class="math-formula highlight-formula">y = ${toFractionString(a)}x² ${b >= 0 ? '+' : ''}${toFractionString(b)}x ${c >= 0 ? '+' : ''}${toFractionString(c)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            
+            syncFromCoefficients();
+        }
+
+                function findFromThreePoints() {
+            const x1 = parseFraction(document.getElementById('three-point1-x').value);
+            const y1 = parseFraction(document.getElementById('three-point1-y').value);
+            const x2 = parseFraction(document.getElementById('three-point2-x').value);
+            const y2 = parseFraction(document.getElementById('three-point2-y').value);
+            const x3 = parseFraction(document.getElementById('three-point3-x').value);
+            const y3 = parseFraction(document.getElementById('three-point3-y').value);
+            
+            if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2) || isNaN(x3) || isNaN(y3)) {
+                alert('すべての座標を正しく入力してください');
+                return;
+            }
+            
+            // x座標が重複していないかチェック
+            if (x1 === x2 || x2 === x3 || x1 === x3) {
+                alert('x座標が重複しています。異なるx座標を持つ3点を入力してください。');
+                return;
+            }
+            
+            // 行列式を計算（3点が一直線上にないかチェック）
+            const det = x1*x1*(x2 - x3) + x2*x2*(x3 - x1) + x3*x3*(x1 - x2);
+            if (Math.abs(det) < 0.0001) {
+                alert('3点が同一直線上にあります。異なる3点を選んでください。');
+                return;
+            }
+            
+            // クラメルの公式を使用して係数を求める
+            // y = ax² + bx + c の連立方程式を解く
+            
+            // aを求める
+            const detA = y1*(x2 - x3) + y2*(x3 - x1) + y3*(x1 - x2);
+            const a = detA / det;
+            
+            // bを求める
+            const detB = x1*x1*(y2 - y3) + x2*x2*(y3 - y1) + x3*x3*(y1 - y2);
+            const b = detB / det;
+            
+            // cを求める
+            const detC = x1*x1*(x2*y3 - x3*y2) + x2*x2*(x3*y1 - x1*y3) + x3*x3*(x1*y2 - x2*y1);
+            const c = detC / det;
+            
+            // 結果が有効な数値かチェック
+            if (isNaN(a) || isNaN(b) || isNaN(c) || !isFinite(a) || !isFinite(b) || !isFinite(c)) {
+                alert('計算エラーが発生しました。入力値を確認してください。');
+                return;
+            }
+            
+            document.getElementById('coeff-a').value = toFractionString(a);
+            document.getElementById('coeff-b').value = toFractionString(b);
+            document.getElementById('coeff-c').value = toFractionString(c);
+            
+            const resultDiv = document.getElementById('quadratic-result');
+            let html = `
+                <div class="step">
+                    <div class="step-title">🎯 3点から2次関数を決定</div>
+                    <div class="substep">
+                        <strong>与えられた3点:</strong>
+                        <div>点1: (${toFractionString(x1)}, ${toFractionString(y1)})</div>
+                        <div>点2: (${toFractionString(x2)}, ${toFractionString(y2)})</div>
+                        <div>点3: (${toFractionString(x3)}, ${toFractionString(y3)})</div>
+                    </div>
+                    <div class="substep">
+                        <strong>連立方程式:</strong>
+                        <div class="math-formula">${toFractionString(x1*x1)}a + ${toFractionString(x1)}b + c = ${toFractionString(y1)}</div>
+                        <div class="math-formula">${toFractionString(x2*x2)}a + ${toFractionString(x2)}b + c = ${toFractionString(y2)}</div>
+                        <div class="math-formula">${toFractionString(x3*x3)}a + ${toFractionString(x3)}b + c = ${toFractionString(y3)}</div>
+                    </div>
+                    <div class="substep">
+                        <strong>解:</strong>
+                        <div class="completed-form">
+                            <div>a = ${toFractionString(a)}</div>
+                            <div>b = ${toFractionString(b)}</div>
+                            <div>c = ${toFractionString(c)}</div>
+                        </div>
+                    </div>
+                    <div class="substep">
+                        <strong>求める2次関数:</strong>
+                        <div class="completed-form">
+                            <div class="math-formula highlight-formula">y = ${toFractionString(a)}x² ${b >= 0 ? '+' : ''}${toFractionString(b)}x ${c >= 0 ? '+' : ''}${toFractionString(c)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            
+            syncFromCoefficients();
+        }
+
+        function findMinMax() {
+            const a = parseFraction(document.getElementById('coeff-a').value);
+            const b = parseFraction(document.getElementById('coeff-b').value);
+            const c = parseFraction(document.getElementById('coeff-c').value);
+            const domainMin = parseFraction(document.getElementById('domain-min').value);
+            const domainMax = parseFraction(document.getElementById('domain-max').value);
+            
+            if (isNaN(a) || isNaN(b) || isNaN(c) || isNaN(domainMin) || isNaN(domainMax) || domainMin >= domainMax) {
+                alert('定義域を正しく入力してください');
+                return;
+            }
+            
+            if (a === 0) {
+                alert('2次関数でないため、最大・最小値の計算は対応していません');
+                return;
+            }
+            
+            const vertexX = -b / (2 * a);
+            const f = (x) => a * x * x + b * x + c;
+            
+            const fMin = f(domainMin);
+            const fMax = f(domainMax);
+            const fVertex = f(vertexX);
+            
+            let html = `
+                <div class="step">
+                    <div class="step-title">🔢 定義域での最大・最小値の求め方</div>
+                    <div>定義域: ${toFractionString(domainMin)} ≤ x ≤ ${toFractionString(domainMax)}</div>
+                    <div>頂点のx座標: ${toFractionString(vertexX)}</div>
+            `;
+            
+            let maxValue, minValue, maxPoint, minPoint;
+            
+            if (vertexX < domainMin) {
+                if (a > 0) {
+                    html += `
+                        <div class="highlight">🔍 場合分け：頂点が定義域の左外 & 下に凸</div>
+                        <div>→ 定義域内では単調増加なので</div>
+                        <div>最小値: x = ${toFractionString(domainMin)} で ${toFractionString(fMin)}</div>
+                        <div>最大値: x = ${toFractionString(domainMax)} で ${toFractionString(fMax)}</div>
+                    `;
+                    minValue = fMin; maxValue = fMax;
+                    minPoint = domainMin; maxPoint = domainMax;
+                } else {
+                    html += `
+                        <div class="highlight">🔍 場合分け：頂点が定義域の左外 & 上に凸</div>
+                        <div>→ 定義域内では単調減少なので</div>
+                        <div>最大値: x = ${toFractionString(domainMin)} で ${toFractionString(fMin)}</div>
+                        <div>最小値: x = ${toFractionString(domainMax)} で ${toFractionString(fMax)}</div>
+                    `;
+                    maxValue = fMin; minValue = fMax;
+                    maxPoint = domainMin; minPoint = domainMax;
+                }
+            } else if (vertexX > domainMax) {
+                if (a > 0) {
+                    html += `
+                        <div class="highlight">🔍 場合分け：頂点が定義域の右外 & 下に凸</div>
+                        <div>→ 定義域内では単調減少なので</div>
+                        <div>最小値: x = ${toFractionString(domainMax)} で ${toFractionString(fMax)}</div>
+                        <div>最大値: x = ${toFractionString(domainMin)} で ${toFractionString(fMin)}</div>
+                    `;
+                    minValue = fMax; maxValue = fMin;
+                    minPoint = domainMax; maxPoint = domainMin;
+                } else {
+                    html += `
+                        <div class="highlight">🔍 場合分け：頂点が定義域の右外 & 上に凸</div>
+                        <div>→ 定義域内では単調増加なので</div>
+                        <div>最大値: x = ${toFractionString(domainMax)} で ${toFractionString(fMax)}</div>
+                        <div>最小値: x = ${toFractionString(domainMin)} で ${toFractionString(fMin)}</div>
+                    `;
+                    maxValue = fMax; minValue = fMin;
+                    maxPoint = domainMax; minPoint = domainMin;
+                }
+            } else {
+                if (a > 0) {
+                    const endpointMax = Math.max(fMin, fMax);
+                    const endpointMaxPoint = fMin > fMax ? domainMin : domainMax;
+                    html += `
+                        <div class="highlight">🔍 場合分け：頂点が定義域内 & 下に凸</div>
+                        <div>→ 頂点で最小値、端点で最大値を比較</div>
+                        <div>最小値: x = ${toFractionString(vertexX)} で ${toFractionString(fVertex)} （頂点）</div>
+                        <div>最大値: x = ${toFractionString(endpointMaxPoint)} で ${toFractionString(endpointMax)} （端点）</div>
+                    `;
+                    minValue = fVertex; maxValue = endpointMax;
+                    minPoint = vertexX; maxPoint = endpointMaxPoint;
+                } else {
+                    const endpointMin = Math.min(fMin, fMax);
+                    const endpointMinPoint = fMin < fMax ? domainMin : domainMax;
+                    html += `
+                        <div class="highlight">🔍 場合分け：頂点が定義域内 & 上に凸</div>
+                        <div>→ 頂点で最大値、端点で最小値を比較</div>
+                        <div>最大値: x = ${toFractionString(vertexX)} で ${toFractionString(fVertex)} （頂点）</div>
+                        <div>最小値: x = ${toFractionString(endpointMinPoint)} で ${toFractionString(endpointMin)} （端点）</div>
+                    `;
+                    maxValue = fVertex; minValue = endpointMin;
+                    maxPoint = vertexX; minPoint = endpointMinPoint;
+                }
+            }
+            
+            html += `
+                </div>
+                <div class="step">
+                    <div class="step-title">📊 答え</div>
+                    <div class="vertex-info">
+                        <div><strong>最大値：${toFractionString(maxValue)}</strong> （x = ${toFractionString(maxPoint)} のとき）</div>
+                        <div><strong>最小値：${toFractionString(minValue)}</strong> （x = ${toFractionString(minPoint)} のとき）</div>
+                    </div>
+                </div>
+            `;
+            
+            const currentResult = document.getElementById('quadratic-result').innerHTML;
+            document.getElementById('quadratic-result').innerHTML = currentResult + html;
+            
+            drawQuadraticGraph(a, b, c);
+        }
+
+        function syncFromCoefficients() {
+    const a = parseFraction(document.getElementById('coeff-a').value) || 1;
+    const b = parseFraction(document.getElementById('coeff-b').value) || 0;
+    const c = parseFraction(document.getElementById('coeff-c').value) || 0;
+    
+    if (isNaN(a) || isNaN(b) || isNaN(c)) return;
+    
+    currentShapeA = a;
+    if (a !== 0) {
+        currentVertexX = -b / (2 * a);
+        currentVertexY = a * currentVertexX * currentVertexX + b * currentVertexX + c;
+    } else {
+        currentVertexX = 0;
+        currentVertexY = c;
+    }
+    
+    const xSlider = document.getElementById('vertex-x-slider');
+    if (xSlider && a !== 0) {
+        xSlider.value = currentVertexX;
+        const xValue = document.getElementById('vertex-x-value');
+        if (xValue) xValue.textContent = formatNumber(currentVertexX);
+    }
+    
+    drawQuadraticGraph(a, b, c);
+    updateLiveFunctionDisplay(a, b, c);
+}
+
+        function drawQuadraticGraph(a, b, c) {
+            const canvas = document.getElementById('quadratic-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const xMin = graphXMin, xMax = graphXMax, yMin = graphYMin, yMax = graphYMax;
+            const xScale = width / (xMax - xMin);
+            const yScale = height / (yMax - yMin);
+            
+            function toCanvasX(x) { return (x - xMin) * xScale; }
+            function toCanvasY(y) { return height - (y - yMin) * yScale; }
+            
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            const xStep = Math.max(1, Math.round((xMax - xMin) / 10));
+            const yStep = Math.max(2, Math.round((yMax - yMin) / 10));
+            
+            for (let x = xMin; x <= xMax; x += xStep) {
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(x), 0);
+                ctx.lineTo(toCanvasX(x), height);
+                ctx.stroke();
+            }
+            for (let y = yMin; y <= yMax; y += yStep) {
+                ctx.beginPath();
+                ctx.moveTo(0, toCanvasY(y));
+                ctx.lineTo(width, toCanvasY(y));
+                ctx.stroke();
+            }
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(0), 0);
+            ctx.lineTo(toCanvasX(0), height);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, toCanvasY(0));
+            ctx.lineTo(width, toCanvasY(0));
+            ctx.stroke();
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            for (let x = xMin; x <= xMax; x += 1) {
+                if (x !== 0) {
+                    ctx.fillText(toFractionString(x), toCanvasX(x), toCanvasY(0) + 15);
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(x), toCanvasY(0) - 3);
+                    ctx.lineTo(toCanvasX(x), toCanvasY(0) + 3);
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.textAlign = 'right';
+            for (let y = yMin; y <= yMax; y += 2) {
+                if (y !== 0) {
+                    ctx.fillText(toFractionString(y), toCanvasX(0) - 8, toCanvasY(y) + 4);
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(0) - 3, toCanvasY(y));
+                    ctx.lineTo(toCanvasX(0) + 3, toCanvasY(y));
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.textAlign = 'left';
+            ctx.fillText('O', toCanvasX(0) + 5, toCanvasY(0) + 15);
+            
+            const domainMin = parseFraction(document.getElementById('domain-min').value);
+            const domainMax = parseFraction(document.getElementById('domain-max').value);
+            
+            if (!isNaN(domainMin) && !isNaN(domainMax) && domainMin < domainMax) {
+                ctx.fillStyle = 'rgba(255, 193, 7, 0.2)';
+                const x1 = Math.max(domainMin, xMin);
+                const x2 = Math.min(domainMax, xMax);
+                ctx.fillRect(toCanvasX(x1), 0, toCanvasX(x2) - toCanvasX(x1), height);
+                
+                ctx.strokeStyle = '#ffc107';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                if (domainMin >= xMin && domainMin <= xMax) {
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(domainMin), 0);
+                    ctx.lineTo(toCanvasX(domainMin), height);
+                    ctx.stroke();
+                }
+                if (domainMax >= xMin && domainMax <= xMax) {
+                    ctx.beginPath();
+                    ctx.moveTo(toCanvasX(domainMax), 0);
+                    ctx.lineTo(toCanvasX(domainMax), height);
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+            }
+            
+            if (a === 0) {
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                if (b === 0) {
+                    if (c >= yMin && c <= yMax) {
+                        ctx.moveTo(0, toCanvasY(c));
+                        ctx.lineTo(width, toCanvasY(c));
+                    }
+                } else {
+                    let started = false;
+                    for (let x = xMin; x <= xMax; x += (xMax - xMin) / 500) {
+                        const y = b * x + c;
+                        if (y >= yMin && y <= yMax) {
+                            if (!started) {
+                                ctx.moveTo(toCanvasX(x), toCanvasY(y));
+                                started = true;
+                            } else {
+                                ctx.lineTo(toCanvasX(x), toCanvasY(y));
+                            }
+                        }
+                    }
+                }
+                ctx.stroke();
+            } else {
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                let started = false;
+                
+                for (let x = xMin; x <= xMax; x += (xMax - xMin) / 500) {
+                    const y = a * x * x + b * x + c;
+                    if (y >= yMin && y <= yMax) {
+                        if (!started) {
+                            ctx.moveTo(toCanvasX(x), toCanvasY(y));
+                            started = true;
+                        } else {
+                            ctx.lineTo(toCanvasX(x), toCanvasY(y));
+                        }
+                    }
+                }
+                ctx.stroke();
+                
+                const vertexX = -b / (2 * a);
+                const vertexY = a * vertexX * vertexX + b * vertexX + c;
+                
+                if (vertexX >= xMin && vertexX <= xMax && vertexY >= yMin && vertexY <= yMax) {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.beginPath();
+                    ctx.arc(toCanvasX(vertexX), toCanvasY(vertexY), 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#333';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`(${toFractionString(vertexX)}, ${toFractionString(vertexY)})`, 
+                               toCanvasX(vertexX), toCanvasY(vertexY) - 10);
+                }
+            }
+        }
+
+        function initQuadratic() {
+            const aField = document.getElementById('coeff-a');
+            const bField = document.getElementById('coeff-b');
+            const cField = document.getElementById('coeff-c');
+            const xSlider = document.getElementById('vertex-x-slider');
+            
+            if (aField) aField.addEventListener('input', syncFromCoefficients);
+            if (bField) bField.addEventListener('input', syncFromCoefficients);
+            if (cField) cField.addEventListener('input', syncFromCoefficients);
+            if (xSlider) xSlider.addEventListener('input', moveGraphHorizontally);
+            
+            resetGraph();
+            drawQuadraticGraph(1, 0, 0);
+            updateLiveFunctionDisplay(1, 0, 0);
+        }
+
+        window.onload = function() {
+            createParticles();
+        };
+    </script>
+</body>
+</html>
